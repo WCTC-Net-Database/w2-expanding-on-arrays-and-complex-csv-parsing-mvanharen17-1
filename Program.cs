@@ -1,5 +1,9 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection.Emit;
+using System.Xml.Linq;
 
 class Program
 {
@@ -12,7 +16,7 @@ class Program
 
         while (true)
         {
-            Console.WriteLine("Menu:");
+            Console.WriteLine("\nMenu:");
             Console.WriteLine("1. Display Characters");
             Console.WriteLine("2. Add Character");
             Console.WriteLine("3. Level Up Character");
@@ -53,35 +57,70 @@ class Program
             // Check if the name is quoted
             if (line.StartsWith("\""))
             {
-                // TODO: Find the closing quote and the comma right after it
-                // TODO: Remove quotes from the name if present and parse the name
-                // name = ...
+                string firstRemoved = line.Trim('"');
+                var quotePos = firstRemoved.IndexOf('"');
+                name = firstRemoved.Substring(0, quotePos);
+
+                var rest = firstRemoved.Substring(name.Length + 2);
+                var splits = rest.Split(",");
+                string charClass = splits[0];
+                var level = splits[1];
+                var hp = splits[2];
+                string[] equipment = splits[3].Split("|");
+
+                Console.WriteLine($"\nName: {name}");
+                Console.WriteLine($"Job: {charClass}");
+                Console.WriteLine($"Level: {level}");
+                Console.WriteLine($"Hit Points: {hp}");
+                Console.WriteLine($"Equipment: {string.Join(", ", equipment)}");
             }
             else
             {
-                // TODO: Name is not quoted, so store the name up to the first comma
-                // name =
+                var cols = lines[i].Split(",");
+                name = cols[0];
+                string charClass = cols[1];
+                var level = cols[2];
+                var hp = cols[3];
+                string[] equipment = cols[4].Split("|");
+
+                Console.WriteLine($"\nName: {name}");
+                Console.WriteLine($"Job: {charClass}");
+                Console.WriteLine($"Level: {level}");
+                Console.WriteLine($"Hit Points: {hp}");
+                Console.WriteLine($"Equipment: {string.Join(", ", equipment)}");
             }
-
-            // TODO: Parse characterClass, level, hitPoints, and equipment
-            // string characterClass = ...
-            // int level = ...
-            // int hitPoints = ...
-
-            // TODO: Parse equipment noting that it contains multiple items separated by '|'
-            // string[] equipment = ...
-
-            // Display character information
-            // Console.WriteLine($"Name: {name}, Class: {characterClass}, Level: {level}, HP: {hitPoints}, Equipment: {string.Join(", ", equipment)}");
         }
     }
 
     static void AddCharacter(ref string[] lines)
     {
-        // TODO: Implement logic to add a new character
         // Prompt for character details (name, class, level, hit points, equipment)
         // DO NOT just ask the user to enter a new line of CSV data or enter the pipe-separated equipment string
         // Append the new character to the lines array
+
+        Console.Write("\n=== Add a Character ===\n");
+
+        Console.Write("Enter your character's name: ");
+        string charName = Console.ReadLine();
+
+        Console.Write("Enter your character's class: ");
+        string charClass = Console.ReadLine();
+
+        Console.Write("Enter your character's level: ");
+        int level = int.Parse(Console.ReadLine());
+
+        Console.Write("Enter your character's HP: ");
+        int hp = int.Parse(Console.ReadLine());
+
+        Console.Write("Enter your character's equipment (separate items with a '|'): ");
+        string[] equipment = Console.ReadLine().Split('|');
+
+        Console.WriteLine($"Welcome, {charName} the {charClass}! You are level {level} with {hp} HP, and your equipment includes: {string.Join(", ", equipment)}.\n");
+
+        using (StreamWriter writer = new StreamWriter("input.csv", true))
+        {
+            writer.WriteLine($"\n{charName},{charClass},{level},{hp},{string.Join("|", equipment)}");
+        }
     }
 
     static void LevelUpCharacter(string[] lines)
@@ -94,22 +133,57 @@ class Program
         {
             string line = lines[i];
 
-            // TODO: Check if the name matches the one to level up
-            // Do not worry about case sensitivity at this point
+            // Check if the name matches the one to level up
             if (line.Contains(nameToLevelUp))
             {
+                if (line.StartsWith("\""))
+                {
+                    string firstRemoved = line.Trim('"');
+                    var quotePos = firstRemoved.IndexOf('"');
+                    string name = firstRemoved.Substring(0, quotePos);
 
-                // TODO: Split the rest of the fields locating the level field
-                // string[] fields = ...
-                // int level = ...
+                    var rest = firstRemoved.Substring(name.Length + 2);
+                    var splits = rest.Split(",");
+                    string charClass = splits[0];
+                    var level = splits[1];
+                    var hp = splits[2];
+                    string[] equipment = splits[3].Split("|");
 
-                // TODO: Level up the character
-                // level++;
-                // Console.WriteLine($"Character {name} leveled up to level {level}!");
+                    // Level up the character
+                    int j = int.Parse(level);
+                    var newLevel = Convert.ToString(j + 1);
 
-                // TODO: Update the line with the new level
-                // lines[i] = ...
-                break;
+                    Console.WriteLine($"{name} is now Level {newLevel}");
+
+                    // Update the line with the new level
+                    using (StreamWriter writer = new StreamWriter("input.csv", true))
+                    {
+                        writer.WriteLine($"\n{name}, {charClass}, {newLevel}, {hp}, {string.Join("|", equipment)}");
+                    }
+                    break;
+                }
+                else
+                {
+                    var cols = lines[i].Split(",");
+                    string name = cols[0];
+                    string charClass = cols[1];
+                    var level = cols[2];
+                    var hp = cols[3];
+                    var equipment = cols[4];
+
+                    // Level up the character
+                    int j = int.Parse(level);
+                    var newLevel = Convert.ToString(j + 1);
+
+                    Console.WriteLine($"{name} is now Level {newLevel}");
+
+                    // Update the line with the new level
+                    using (StreamWriter writer = new StreamWriter("input.csv", true))
+                    {
+                        writer.WriteLine($"\n{name}, {charClass}, {newLevel}, {hp}, {string.Join("|", equipment)}");
+                    }
+                    break;
+                }
             }
         }
     }
